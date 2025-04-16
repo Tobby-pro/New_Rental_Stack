@@ -1,0 +1,30 @@
+services:
+  backend:
+    container_name: backend
+    image: backend
+    build:
+      context: ./backend
+      dockerfile: backend.dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - ./backend/.env
+    depends_on:
+      - db_new
+    command: sleep infinity
+
+  db_new:
+    container_name: db_new
+    image: postgres:15  # Upgrade to PostgreSQL 15
+    restart: always
+    environment:
+      POSTGRES_USER: rentalstack
+      POSTGRES_PASSWORD: rentalstack
+      POSTGRES_DB: rentalstack
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata: {}
