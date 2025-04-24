@@ -97,7 +97,7 @@ const LandlordDashboardGrid: React.FC<LandlordDashboardGridProps> = ({ className
   return (
     <div className={`grid grid-rows-2 grid-cols-1 gap-6 p-6 ${className}`}>
       <div className="row-span-1 p-6 shadow-lg rounded-xl bg-white">
-        <h2 className="text-3xl font-semibold bg-gradient-to-b from-black to-violet-300 text-transparent bg-clip-text">
+        <h2 className="text-3xl font-semibold bg-gradient-to-b from-black-100 to-violet-500 text-transparent bg-clip-text">
           {welcomeMessage}
         </h2>
         <p className="text-sm text-gray-500">Your property portfolio report</p>

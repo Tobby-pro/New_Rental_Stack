@@ -161,48 +161,48 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
           className="bg-transparent border border-gray-500 p-6 rounded shadow-md w-full max-w-sm"
           onSubmit={handleSubmit}
         >
-          <label htmlFor="email" className="block text-gray-700">Email</label>
+          <label htmlFor="email" className="block text-sm text-gray-700">Email</label>
           <input
             name="email"
             type="email"
             placeholder="tobichuks@gmail.com"
             value={user.email}
             onChange={(e) => setUser({ ...user, email: e.target.value })}
-            className="bg-transparent outline-none w-full px-4 py-2 border rounded placeholder:text-gray-600 border-gray-600"
+            className="bg-transparent outline-none w-full px-4 py-2 border  placeholder:text-sm rounded placeholder:text-gray-600 border-gray-600"
           />
 
-          <label htmlFor="password" className="block text-gray-700">Password</label>
+          <label htmlFor="password" className="block text-sm text-gray-700">Password</label>
           <input
             name="password"
             type="password"
             placeholder="password"
             value={user.password}
             onChange={(e) => setUser({ ...user, password: e.target.value })}
-            className=" border-gray-600 bg-transparent outline-none w-full px-4 py-2 border rounded placeholder:text-gray-600"
+            className=" border-gray-600 bg-transparent outline-none  placeholder:text-sm w-full px-4 py-2 border rounded placeholder:text-gray-600"
           />
 
           {isSignUp && (
             <>
-              <label htmlFor="name" className="block text-gray-700">Name</label>
+              <label htmlFor="name" className="block text-sm text-gray-700">Name</label>
               <input
                 name="name"
                 type="text"
                 placeholder="Tobi Chuks"
                 value={user.name}
                 onChange={(e) => setUser({ ...user, name: e.target.value })}
-                className="bg-transparent outline-none w-full px-4 py-2 border rounded placeholder:text-gray-600"
+                className=" border-gray-600  placeholder:text-sm bg-transparent outline-none w-full px-4 py-2 border rounded placeholder:text-gray-600"
               />
             </>
           )}
 
           {isSignUp && (
             <>
-              <label htmlFor="role" className="block text-gray-700">Role</label>
+              <label htmlFor="role" className="block text-sm text-gray-700">Role</label>
               <select
                 name="role"
                 value={user.role}
                 onChange={(e) => setUser({ ...user, role: e.target.value })}
-                className="bg-transparent outline-none w-full px-4 py-2 border rounded"
+                className=" border-gray-600 text-sm placeholder:text-sm bg-transparent outline-none w-full px-4 py-2 border rounded"
               >
                 <option value="LANDLORD">Landlord</option>
                 <option value="TENANT">Tenant</option>
@@ -212,7 +212,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
 
           <button
             type="submit"
-            className="mt-6 w-full bg-gradient-to-r from-violet-700 via-black-100 to-violet-700 text-white font-bold py-2 px-4 rounded text-center"
+            className="mt-6 w-full bg-gradient-to-r  from-violet-700 via-black-100 to-violet-700 text-white font-bold py-2 px-4 rounded text-center"
             disabled={isSubmitting}
           >
             {isSignUp ? 'Sign Up' : 'Login'}

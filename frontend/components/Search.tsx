@@ -35,7 +35,7 @@ const Searchlist: React.FC = () => {
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null); // assuming conversationId for chat
     const [imageLoading, setImageLoading] = useState<Record<number, boolean>>({});
     const [isModalOpen, setIsModalOpen] = useState(false); // Correct implementation of state
-        const [currentVideo, setCurrentVideo] = useState('');  // Correct implementation of state
+    const [currentVideo, setCurrentVideo] = useState('');  // Correct implementation of state
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002";
     const router = useRouter();

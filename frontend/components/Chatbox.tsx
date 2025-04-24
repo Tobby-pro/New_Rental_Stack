@@ -31,6 +31,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({ landlordId, conversationId: initialCo
     const [socket, setSocket] = useState<Socket | null>(null);
     const [seenMessages, setSeenMessages] = useState<string[]>([]); // Track seen messages
     const [conversationId, setConversationId] = useState<string>(initialConversationId || '');
+    const chatBoxRef = useRef<HTMLDivElement | null>(null);
+    const [isChatBoxOpen, setIsChatBoxOpen] = useState<boolean>(true); // Or however you manage visibility
+
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
     const [isTyping, setIsTyping] = useState<boolean>(false);
@@ -52,6 +55,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({ landlordId, conversationId: initialCo
             setIsTyping(false);
         }, 2000); // Hide typing indicator after 2 seconds
     };
+    useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (chatBoxRef.current && !chatBoxRef.current.contains(event.target as Node)) {
+            setIsChatBoxOpen(false); // Or any logic to close/hide the chatbox
+        }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+    };
+}, []);
 
     useEffect(() => {
         const typingListener = (data: TypingData) => {
@@ -339,7 +354,10 @@ const formatDateHeader = (timestamp: string): string => {
 
  
  return (
-    <div className="flex flex-col h-[90vh] max-w-md mx-auto shadow-md border rounded-lg overflow-hidden bg-white">
+    <>
+    {isChatBoxOpen && (
+    <div ref={chatBoxRef}
+    className="flex flex-col h-[90vh] max-w-md mx-auto shadow-md border rounded-lg overflow-hidden bg-white">
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((msg) => {
                 const isOwnMessage = msg.senderId === Number(userId);
@@ -402,12 +420,13 @@ const formatDateHeader = (timestamp: string): string => {
                 onClick={sendMessage}
                 className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600"
             >
-                Send
-            </button>
+                 Send
+          </button>
         </div>
-    </div>
+      </div>
+    )}
+  </>
 );
-
 };
 
 export default ChatBox;

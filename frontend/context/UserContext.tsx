@@ -11,6 +11,15 @@ interface User {
   role: string;
 }
 
+interface PropertyType {
+  id: string;
+  address: string;
+  city: string;
+  state: string;
+  price: number;
+  // Add more fields if needed
+}
+
 interface UserContextType {
   landlordId: string | null;
   username: string;
@@ -27,6 +36,8 @@ interface UserContextType {
   refreshAccessToken: () => Promise<string | null>;
 
   isTokenExpired: (token: string | null) => boolean;
+  properties: PropertyType[]; // 👈 new
+  setProperties: React.Dispatch<React.SetStateAction<PropertyType[]>>; // 👈 new
 }
 
 const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4002');
@@ -46,6 +57,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [landlordId, setLandlordId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [properties, setProperties] = useState<PropertyType[]>([]); // 👈 ne
 
   const socketRef = useRef<any>(null); // Reference for socket instance
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4002';
@@ -213,7 +225,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         landlordId,
         notifications,
         refreshAccessToken, // Provide the refresh function
-        isTokenExpired
+        isTokenExpired,
+         properties,         // 👈 added
+        setProperties,      // 👈 added
       }}
     >
       {children}

@@ -47,7 +47,7 @@ const MessageDropdown = ({ tenantMessages, landlordId, onTenantClick }: MessageD
         {tenantMessages.length > 0 && (
           <motion.div
             key="dropdown"
-            className="absolute top-10 right-0 bg-white border shadow-lg w-80 rounded-lg max-h-80 overflow-y-auto z-50"
+            className="absolute top-10 right-[-30px] w-96 max-h-96 overflow-y-auto bg-white rounded-2xl shadow-2xl z-50 border border-gray-200"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -56,18 +56,23 @@ const MessageDropdown = ({ tenantMessages, landlordId, onTenantClick }: MessageD
             {tenantMessages.map(({ conversationId, name, lastMessage, lastMessageDate }) => (
               <div
                 key={conversationId}
-                className="p-3 border-b last:border-b-0 cursor-pointer hover:bg-gray-100"
+                className="p-4 border-b last:border-b-0 hover:bg-gray-50 transition-colors cursor-pointer"
                 onClick={() => handleTenantClick(name, conversationId)}
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs">
+                <div className="flex items-start gap-3">
+                  {/* Avatar bubble with initial */}
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                     {name[0]}
                   </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-sm">{name}</div>
-                    <div className="text-sm text-gray-500">{lastMessage}</div>
+
+                  {/* Message content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <div className=" text-sm text-blue-700 truncate">{name}</div>
+                      <div className="text-xs text-gray-400 whitespace-nowrap">{formatDate(lastMessageDate)}</div>
+                    </div>
+                    <div className="text-sm text-gray-500 truncate">{lastMessage}</div>
                   </div>
-                  <div className="text-xs text-gray-400">{formatDate(lastMessageDate)}</div>
                 </div>
               </div>
             ))}
@@ -75,6 +80,7 @@ const MessageDropdown = ({ tenantMessages, landlordId, onTenantClick }: MessageD
         )}
       </AnimatePresence>
 
+      {/* Modal Chatbox */}
       <AnimatePresence>
         {isChatboxOpen && selectedTenant && selectedConversationId && (
           <motion.div
@@ -84,17 +90,17 @@ const MessageDropdown = ({ tenantMessages, landlordId, onTenantClick }: MessageD
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-white rounded-lg w-full max-w-md p-4 relative"
+              className="bg-white rounded-lg w-full max-w-md p-4 relative shadow-xl"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
               <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
                 onClick={closeModal}
               >
-                Close
+                ✕
               </button>
               <Chatbox
                 key={selectedConversationId}

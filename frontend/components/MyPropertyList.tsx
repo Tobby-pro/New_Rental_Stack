@@ -2,6 +2,10 @@ import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import CustomLoading from './Loading';
 import { useUser } from '@/context/UserContext';
+import dynamic from "next/dynamic";
+import { Globe } from 'lucide-react';
+const GoLiveForm = dynamic(() => import('./GoLiveForm'), { ssr: false });
+
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4002';
 
@@ -25,6 +29,7 @@ interface Property {
   landlordId: number;
   createdAt: string;
   media: Media[];
+  description?: string;
 }
 
 interface MyPropertyListProps {
@@ -38,6 +43,18 @@ const MyPropertyList: React.FC<MyPropertyListProps> = ({ className }) => {
   const [imageLoading, setImageLoading] = useState<Record<number, boolean>>({});
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [currentVideo, setCurrentVideo] = useState<string>('');
+  const [showGoLiveModal, setShowGoLiveModal] = useState(false);
+const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
+
+const handleOpenGoLive = (property: { id: number; title: string }) => {
+  setSelectedPropertyId(property.id);
+  setShowGoLiveModal(true);
+};
+
+const handleCloseGoLive = () => {
+  setShowGoLiveModal(false);
+  setSelectedPropertyId(null);
+};
 
   const {
     token,
@@ -146,6 +163,17 @@ const MyPropertyList: React.FC<MyPropertyListProps> = ({ className }) => {
                   <p className="text-white text-sm">Bedrooms: {property.bedrooms}</p>
                   <p className="text-white text-sm">Bathrooms: {property.bathrooms}</p>
                 </div>
+                <span
+                    className="z-40 flex items-center gap-1 text-sm text-black-700 hover:underline cursor-pointer px-4 pb-4 hover:text-black transition-all duration-200 active:scale-95 "
+                    onClick={() => handleOpenGoLive({
+                     id: property.id,
+                     title: `${property.description} in ${property.city}`
+                   })}
+                  >
+                    <Globe size={16} />
+                    Go Live
+                  </span>
+
               </div>
             </div>
           ))}
@@ -164,6 +192,13 @@ const MyPropertyList: React.FC<MyPropertyListProps> = ({ className }) => {
           </div>
         </div>
       )}
+      {showGoLiveModal && selectedPropertyId && (
+  <GoLiveForm
+    propertyId={selectedPropertyId.toString()}
+    onClose={handleCloseGoLive}
+  />
+)}
+
     </div>
   );
 };
