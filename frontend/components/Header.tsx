@@ -8,7 +8,7 @@ const Header = () => {
   const router = useRouter(); // Initialize router
 
   return (
-    <header className="fixed top-0 w-full z-50 h-14 backdrop-blur-md bg-opacity-50 py-8 lg:py-5">
+    <header className="fixed top-0 w-full z-50 h-14 backdrop-blur-md bg-opacity-50">
       <nav className="flex items-center justify-between p-4 lg:p-8">
         {/* Left side - Logo */}
         <div className="flex flex-1">

@@ -57,7 +57,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [landlordId, setLandlordId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
-  const [properties, setProperties] = useState<PropertyType[]>([]); // 👈 ne
+  const [properties, setProperties] = useState<PropertyType[]>([]);
 
   const socketRef = useRef<any>(null); // Reference for socket instance
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4002';

@@ -1,6 +1,10 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import VideoUploadModal from './VideoUploadModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import MuxPlayer from '@mux/mux-player-react';
+import axios, { AxiosProgressEvent } from 'axios';
+import { useUser } from '@/context/UserContext';
+
 interface AddPropertyModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -54,105 +58,157 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [showSuccessCheck, setShowSuccessCheck] = useState(false);
-
+  const [muxPlaybackId, setMuxPlaybackId] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const { token, refreshAccessToken, isTokenExpired } = useUser();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4002";
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-  const target = e.target as HTMLInputElement;
-  const { name, value, type } = target;
-
-  
-  setPropertyData((prevData) => ({
-    ...prevData,
-    [name]: type === 'checkbox' ? target.checked : value,
-  }));
-};
-
-
-const handleTextareaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-  const { name, value } = e.target;
-  setPropertyData((prevData) => ({
-    ...prevData,
-    [name]: value,
-  }));
-};
-
-  const handleVideoSubmit = async (file: File) => {
-  setUploadingVideo(true);
-  
-  // Simulate upload delay (or use real upload logic)
-  setTimeout(() => {
-    setVideoFile(file);
-    setVideoPreview(URL.createObjectURL(file));
-    setIsVideoModalOpen(false);
-    setPropertyData((prev) => ({
-      ...prev,
-      media: [file],
+    const target = e.target as HTMLInputElement;
+    const { name, value, type } = target;
+    setPropertyData((prevData) => ({
+      ...prevData,
+      [name]: type === 'checkbox' ? target.checked : value,
     }));
-    setUploadingVideo(false);
-  }, 1500);
-};
+  };
 
+  const handleTextareaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setPropertyData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+  const handleVideoSubmit = async (file: File) => {
+    setUploadingVideo(true);
+  
+    try {
+      let validToken = token;
+      if (!validToken || isTokenExpired(validToken)) {
+        validToken = await refreshAccessToken();
+        if (!validToken) {
+          alert("Session expired. Please log in again.");
+          setUploadingVideo(false);
+          return;
+        }
+      }
+  
+      const res = await fetch('/api/mux/upload-url', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      const { uploadUrl, uploadId } = await res.json();
+  
+      // Upload video directly (no FormData needed)
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+      });
+  
+      setVideoFile(file);
+      setVideoPreview(URL.createObjectURL(file));
+      setIsVideoModalOpen(false);
+      setPropertyData((prev) => ({
+        ...prev,
+        media: [file],
+      }));
+  
+      pollMuxStatus(uploadId);
+    } catch (err) {
+      console.error("Video upload failed", err);
+      alert("Video upload failed. Please try again.");
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+  
+  const pollMuxStatus = async (uploadId: string) => {
+    if (!uploadId) return;
+  
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/mux/check-status?uploadId=${uploadId}`);
+        const data = await res.json();
+  
+        if (data.playbackId) {
+          clearInterval(interval);
+          setMuxPlaybackId(data.playbackId);
+  
+          // Optional: Save to DB
+          await fetch('/api/save-to-db', {
+            method: 'POST',
+            body: JSON.stringify({ playbackId: data.playbackId }),
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      } catch (err) {
+        clearInterval(interval);
+        console.error("Polling error", err);
+      }
+    }, 3000);
+  };
+  
+  
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (
-      !propertyData.address ||
-      !propertyData.city ||
-      !propertyData.state ||
-      !propertyData.price ||
-      !propertyData.bedrooms ||
-      !propertyData.bathrooms ||
-      propertyData.media.length === 0
-    ) {
+    const {
+      address,
+      city,
+      state,
+      price,
+      bedrooms,
+      bathrooms,
+      media,
+      description,
+      liveEnabled,
+      liveTitle,
+      liveDate,
+      liveDuration,
+    } = propertyData;
+
+    if (!address || !city || !state || !price || !bedrooms || !bathrooms || !muxPlaybackId) {
       alert('Please fill in all required fields and upload a video.');
       return;
     }
 
-    if (propertyData.liveEnabled) {
-      if (
-        !propertyData.liveTitle ||
-        !propertyData.liveDate ||
-        !propertyData.liveDuration
-      ) {
-        alert('Please fill in all live session details.');
-        return;
-      }
+    if (liveEnabled && (!liveTitle || !liveDate || !liveDuration)) {
+      alert('Please fill in all live session details.');
+      return;
     }
 
     const data = new FormData();
-    data.append('address', propertyData.address);
-    data.append('city', propertyData.city);
-    data.append('state', propertyData.state);
-    data.append('price', propertyData.price.toString());
-    data.append('bedrooms', propertyData.bedrooms.toString());
-    data.append('bathrooms', propertyData.bathrooms.toString());
-    data.append('description', propertyData.description || '');
+    data.append('address', address);
+    data.append('city', city);
+    data.append('state', state);
+    data.append('price', price.toString());
+    data.append('bedrooms', bedrooms.toString());
+    data.append('bathrooms', bathrooms.toString());
+    data.append('description', description);
 
-    if (propertyData.liveEnabled) {
+    if (liveEnabled) {
       data.append('liveEnabled', 'true');
-      data.append('liveTitle', propertyData.liveTitle);
-      data.append('liveDate', propertyData.liveDate);
-      data.append('liveDuration', propertyData.liveDuration.toString());
+      data.append('liveTitle', liveTitle);
+      data.append('liveDate', liveDate);
+      data.append('liveDuration', liveDuration.toString());
     }
 
-    propertyData.media.forEach((mediaFile) => {
-      data.append('media', mediaFile);
-    });
+    data.append('muxPlaybackIds[]', muxPlaybackId);
 
     try {
-  await onSubmit(data);
-  setAlertMessage('Property added successfully!');
-  setShowSuccessCheck(true);
-  
-  // Delay before closing
-  setTimeout(() => {
-    setShowSuccessCheck(false);
-    onClose();
-  }, 2000);
-} catch (err) {
-  console.error('Submission error:', err);
-}
-
+      console.log('Submitting property data...', { muxPlaybackId });
+      await onSubmit(data);
+      setAlertMessage('Property added successfully!');
+      setShowSuccessCheck(true);
+    } catch (error) {
+      console.error('Error submitting property', error);
+    }
   };
+
+
 
   const backdrop = {
     hidden: { opacity: 0 },
@@ -173,29 +229,37 @@ const handleTextareaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
 
   if (!isOpen) return null;
 
-return (
-  <AnimatePresence>
-    {isOpen && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className={`fixed inset-0 z-50 flex items-center sm:items-center justify-center px-4`}
-      >
-        {/* Overlay */}
-        <div
-          onClick={onClose}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
-        />
-
-        {/* Modal */}
+  return (
+    <AnimatePresence>
+      {isOpen && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 40 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 40 }}
+          key="modal-container"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className={`relative z-50 w-full max-w-lg bg-white rounded-t-2xl sm:rounded-lg shadow-xl p-6 sm:max-h-[90vh] overflow-y-auto`}
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
         >
+          {/* Backdrop */}
+          <motion.div
+            onClick={onClose}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          />
+
+          {/* Modal */}
+          <motion.div
+            key="modal"
+            initial={{ opacity: 0, scale: 0.95, y: 40 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 40 }}
+            transition={{ duration: 0.3 }}
+            className="relative z-50 w-full max-w-lg bg-white rounded-t-2xl sm:rounded-lg shadow-xl p-6 max-h-[90vh] overflow-y-auto"
+          >
+        
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-800">Add New Property</h2>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
@@ -355,7 +419,7 @@ return (
               </div>
             )}
 
-            <div className="mt-4">
+             <div className="mt-4">
               <button
                 type="button"
                 onClick={() => setIsVideoModalOpen(true)}
@@ -364,55 +428,89 @@ return (
                 {videoFile ? 'Replace Video' : 'Upload Video'}
               </button>
 
-              {videoPreview && (
-                <video
-                  src={videoPreview}
-                  controls
-                  className="mt-2 w-full h-32 rounded shadow"
-                />
+                              {/* Local preview before upload */}
+        
+              {/* Mux hosted video preview after upload */}
+              {muxPlaybackId && (
+           <MuxPlayer
+            playbackId={muxPlaybackId}
+            streamType="on-demand"
+            autoPlay={false}
+            // @ts-ignore
+            controls
+            className="mt-2 w-[200px] h-[200px] rounded shadow"
+            />
               )}
             </div>
 
             <button
-  type="submit"
-  disabled={isSubmitting || uploadingVideo}
-  className={`w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-md transition duration-300 ${
-    isSubmitting || uploadingVideo ? 'opacity-60 cursor-not-allowed' : 'hover:bg-blue-700'
-  }`}
->
-  {isSubmitting ? (
-    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-    </svg>
-  ) : showSuccessCheck ? (
-    <svg className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  ) : (
-    'Add Property'
-  )}
-</button>
+              type="submit"
+              disabled={isSubmitting || uploadingVideo}
+              className={`w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-md transition duration-300 ${
+                isSubmitting || uploadingVideo
+                  ? 'opacity-60 cursor-not-allowed'
+                  : 'hover:bg-blue-700'
+              }`}
+            >
+              {isSubmitting ? (
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
+                </svg>
+              ) : showSuccessCheck ? (
+                <svg
+                  className="h-5 w-5 text-green-500"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              ) : (
+                'Add Property'
+              )}
+            </button>
 
           </form>
-          {uploadingVideo && (
-  <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
-    <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-    </svg>
-    Uploading video...
-  </div>
-)}
+         {uploadingVideo && (
+              <div className="flex items-center gap-2 text-blue-600 text-sm font-medium">
+                <svg className="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Uploading video...
+              </div>
+            )}
         </motion.div>
 
-        {isVideoModalOpen && (
-          <VideoUploadModal
-            isOpen={isVideoModalOpen}
-            onClose={() => setIsVideoModalOpen(false)}
-            onSubmit={handleVideoSubmit}
-          />
-        )}
+      {isVideoModalOpen && (
+            <VideoUploadModal
+              isOpen={isVideoModalOpen}
+              onClose={() => setIsVideoModalOpen(false)}
+              onSubmit={handleVideoSubmit}
+            />
+          )}
       </motion.div>
     )}
   </AnimatePresence>

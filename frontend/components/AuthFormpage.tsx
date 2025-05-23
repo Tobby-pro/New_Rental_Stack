@@ -187,7 +187,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
               <input
                 name="name"
                 type="text"
-                placeholder="Tobi Chuks"
+                placeholder="Jesse peter"
                 value={user.name}
                 onChange={(e) => setUser({ ...user, name: e.target.value })}
                 className=" border-gray-600  placeholder:text-sm bg-transparent outline-none w-full px-4 py-2 border rounded placeholder:text-gray-600"

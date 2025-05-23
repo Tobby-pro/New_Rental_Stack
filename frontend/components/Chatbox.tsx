@@ -132,63 +132,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ landlordId, conversationId: initialCo
         fetchLandlordInfo();
     }, [parsedLandlordId, apiUrl, token, refreshAccessToken, isTokenExpired]);
 
-    useEffect(() => {
-    const fetchConversation = async () => {
-        if (!tenantId || !parsedLandlordId || conversationId) return; // Prevent overwriting existing ID
-        
-        let validToken = localStorage.getItem('token');
-        if (!validToken || isTokenExpired(validToken)) {
-            validToken = await refreshAccessToken(); // This now returns string | null ✅
-            if (!validToken) {
-                console.warn("Unable to refresh token. User might not be authenticated.");
-                return;
-            }
-        }
-
-        try {
-            console.log("Fetching conversation with:", { landlordId: parsedLandlordId, tenantId });
-            const conversationResponse = await axios.get(`${apiUrl}/api/chats`, {
-                params: { landlordId: parsedLandlordId, tenantId, _t: Date.now() },
-                headers: { Authorization: `Bearer ${validToken}`, 'Cache-Control': 'no-cache' }, // Use validToken here
-            });
-
-            const fetchedConversationId = conversationResponse.data.conversationId;
-            if (!conversationIdRef.current) {
-                setConversationId(fetchedConversationId);
-            }
-        } catch (error: any) {
-            if (error.response?.status === 403) {
-                console.error('Access denied. Please check authentication.');
-            } else if (error.response?.status === 404) {
-                console.log('No existing conversation found. Creating one...');
-                const propertyId = landlord?.listings?.[0]?.id;
-                if (!propertyId) return;
-
-                try {
-                    const startChatResponse = await axios.post(`${apiUrl}/api/chats/start-chat`, {
-                        tenantId, // Now using tenantId from context
-                        landlordId: parsedLandlordId,
-                        propertyId
-                    }, {
-                        headers: { Authorization: `Bearer ${validToken}` }, // Use validToken here
-                    });
-
-                    const newConversationId = startChatResponse.data.conversationId;
-                    console.log("Newly created conversationId:", newConversationId);
-                    if (!conversationIdRef.current) {
-                        setConversationId(newConversationId);
-                    }
-                } catch (startChatError: any) {
-                    console.error('Error creating conversation:', startChatError);
-                }
-            } else {
-                console.error('Error fetching or creating conversation:', error);
-            }
-        }
-    };
-
-    fetchConversation();
-}, [tenantId, parsedLandlordId, apiUrl, token, refreshAccessToken, isTokenExpired]);
 
 
     useEffect(() => {

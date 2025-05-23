@@ -15,7 +15,8 @@ interface GoLiveFormProps {
 }
 
 const GoLiveForm: React.FC<GoLiveFormProps> = ({ propertyId, onClose }) => {
-  const { username, token, userId, userRole } = useUser(); // Destructure to get the logged-in user's username and token
+  const { username, token, userId, userRole, refreshAccessToken, isTokenExpired } = useUser();
+ // Destructure to get the logged-in user's username and token
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -26,41 +27,41 @@ const handleSubmit = useCallback(async (e: React.FormEvent) => {
   e.preventDefault();
 
   try {
-    if (mode === "now") {
-      // Dynamically set the role based on the user's role
-      const role = username === 'landlord' ? 'host' : 'audience'; // Not used in request currently, just logic helper
+    let validToken = token;
 
+    if (!validToken || isTokenExpired(validToken)) {
+      validToken = await refreshAccessToken(); // Get a fresh token
+      if (!validToken) {
+        console.error("Unable to refresh token.");
+        alert("Session expired. Please log in again.");
+        return;
+      }
+    }
+
+    if (mode === "now") {
       console.log("🔍 Submitting Go Live request with:");
       console.log("➡️ Username:", username);
-      console.log("➡️ userRole (from context):", userRole); // This will help us confirm if it's 'LANDLORD' or 'landlord'
+      console.log("➡️ userRole (from context):", userRole);
       console.log("➡️ userId (uid):", userId);
       console.log("➡️ propertyId (channelName):", propertyId);
-      console.log("➡️ Token being sent:", token);
+      console.log("➡️ Token being sent:", validToken);
 
-      // Fetch the Agora token
-      const response = await axios.get(
-        `${apiUrl}/api/agora-token`,
-        {
-          params: {
-            channelName: propertyId,
-            uid: userId,
-            role: userRole,
-          },
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get(`${apiUrl}/api/agora-token`, {
+        params: {
+          channelName: propertyId,
+          uid: userId,
+          role: userRole,
+        },
+        headers: {
+          Authorization: `Bearer ${validToken}`,
+        },
+      });
 
       const { token: agoraToken } = response.data;
 
       console.log("✅ Agora token received:", agoraToken);
-
-      // Redirect to the host page with the received token and channel name
-     router.push(`/host?token=${agoraToken}&channel=${propertyId}&uid=${userId}`);
-
+      router.push(`/host?token=${agoraToken}&channel=${propertyId}&uid=${userId}`);
     } else {
-      // Handle the scheduled stream mode
       console.log("🗓️ Scheduled Stream:", {
         propertyId,
         title,
@@ -74,8 +75,21 @@ const handleSubmit = useCallback(async (e: React.FormEvent) => {
     console.error("❌ Error fetching Agora token:", err);
     alert("An error occurred while preparing your live stream.");
   }
-}, [mode, propertyId, title, description, scheduledTime, username, token, router, onClose]);
-
+}, [
+  mode,
+  propertyId,
+  title,
+  description,
+  scheduledTime,
+  username,
+  userRole,
+  userId,
+  token,
+  refreshAccessToken,
+  isTokenExpired,
+  router,
+  onClose
+]);
 
   return (
     <AnimatePresence>

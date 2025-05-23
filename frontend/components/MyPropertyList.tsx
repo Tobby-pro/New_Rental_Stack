@@ -2,10 +2,11 @@ import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import CustomLoading from './Loading';
 import { useUser } from '@/context/UserContext';
-import dynamic from "next/dynamic";
+import dynamic from 'next/dynamic';
 import { Globe } from 'lucide-react';
-const GoLiveForm = dynamic(() => import('./GoLiveForm'), { ssr: false });
+import MuxPlayer from '@mux/mux-player-react';
 
+const GoLiveForm = dynamic(() => import('./GoLiveForm'), { ssr: false });
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4002';
 
@@ -16,6 +17,8 @@ interface Media {
   propertyId: number;
   createdAt: string;
   updatedAt: string;
+  playbackId?: string;
+  status?: string;
 }
 
 interface Property {
@@ -38,29 +41,25 @@ interface MyPropertyListProps {
 
 const MyPropertyList: React.FC<MyPropertyListProps> = ({ className }) => {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState<Record<number, boolean>>({});
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [currentVideo, setCurrentVideo] = useState<string>('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPlaybackId, setCurrentPlaybackId] = useState('');
   const [showGoLiveModal, setShowGoLiveModal] = useState(false);
-const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<number | null>(null);
 
-const handleOpenGoLive = (property: { id: number; title: string }) => {
-  setSelectedPropertyId(property.id);
-  setShowGoLiveModal(true);
-};
+  const { token, refreshAccessToken, isTokenExpired } = useUser();
 
-const handleCloseGoLive = () => {
-  setShowGoLiveModal(false);
-  setSelectedPropertyId(null);
-};
+  const handleOpenGoLive = (property: { id: number; title: string }) => {
+    setSelectedPropertyId(property.id);
+    setShowGoLiveModal(true);
+  };
 
-  const {
-    token,
-    refreshAccessToken,
-    isTokenExpired,
-  } = useUser();
+  const handleCloseGoLive = () => {
+    setShowGoLiveModal(false);
+    setSelectedPropertyId(null);
+  };
 
   const fetchProperties = useCallback(async () => {
     try {
@@ -111,14 +110,14 @@ const handleCloseGoLive = () => {
     setImageLoading((prev) => ({ ...prev, [imageId]: false }));
   };
 
-  const openModal = (videoUrl: string) => {
-    setCurrentVideo(videoUrl);
+  const openModal = (playbackId: string) => {
+    setCurrentPlaybackId(playbackId);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setCurrentVideo('');
+    setCurrentPlaybackId('');
   };
 
   if (loading) return <CustomLoading />;
@@ -127,78 +126,113 @@ const handleCloseGoLive = () => {
   return (
     <div className={`p-6 ${className}`}>
       <h1 className="text-left text-sm font-semibold mb-6">Properties Created by You</h1>
+
       {properties.length === 0 ? (
         <p className="text-gray-500 text-sm">You have no properties yet.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-[100%]">
-          {properties.map((property) => (
-            <div className="relative bg-white shadow-md rounded-lg overflow-hidden group" key={property.id}>
-              <div className="inner-container w-full h-full p-0 bg-gradient-to-br from-white via-gray-700 to-gray-600">
-                {property.media[0]?.type === 'video' ? (
-                  <video
-                    src={property.media[0]?.url}
-                    className="w-full h-48 sm:h-64 md:h-72 lg:h-48 object-contain sm:object-cover transition-shadow duration-300 ease-in-out group-hover:shadow-lg cursor-pointer"
-                    muted
-                    playsInline
-                    onMouseEnter={(e) => e.currentTarget.play()}
-                    onMouseLeave={(e) => e.currentTarget.pause()}
-                    onClick={() => openModal(property.media[0]?.url)}
-                    onError={(e) => console.error('Error loading video:', e)}
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                ) : (
-                  <img
-                    src={property.media[0]?.url}
-                    alt={`Property image ${property.id}`}
-                    className="w-full h-48 object-cover transition-shadow duration-300 ease-in-out group-hover:shadow-lg"
-                    onLoad={() => handleImageLoad(property.id)}
-                    onError={() => handleImageError(property.id)}
-                  />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+          {properties.map((property) => {
+            const media = property.media[0];
+            const isVideoReady = media?.type === 'video' && media.status === 'ready';
+            const playbackId = media?.playbackId;
+
+            return (
+              <div
+                key={property.id}
+                className="relative max-w-sm bg-white dark:bg-[#0f0f0f] dark:border-gray-500 rounded-xl overflow-hidden shadow-lg group hover:shadow-2xl hover:scale-[1.03] transition-transform duration-300 cursor-pointer"
+              >
+                {isVideoReady && (
+                  <div className="absolute top-2 right-2 z-20 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-md">
+                    LIVE
+                  </div>
                 )}
-                <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                  <h2 className="text-white text-lg font-semibold">{property.address}</h2>
-                  <p className="text-white text-sm">Town: {property.city}</p>
-                  <p className="text-white text-sm">Price: ₦{property.price.toLocaleString()}k</p>
-                  <p className="text-white text-sm">Bedrooms: {property.bedrooms}</p>
-                  <p className="text-white text-sm">Bathrooms: {property.bathrooms}</p>
-                </div>
-                <span
-                    className="z-40 flex items-center gap-1 text-sm text-black-700 hover:underline cursor-pointer px-4 pb-4 hover:text-black transition-all duration-200 active:scale-95 "
-                    onClick={() => handleOpenGoLive({
-                     id: property.id,
-                     title: `${property.description} in ${property.city}`
-                   })}
+
+                {playbackId ? (
+                  <div
+                    onClick={() => openModal(playbackId)}
+                    className="w-full aspect-video bg-black overflow-hidden"
                   >
-                    <Globe size={16} />
+                    <MuxPlayer
+  playbackId={playbackId}
+  autoPlay={false}
+  muted
+  loop
+  className="w-full h-48 object-cover block transition-transform duration-300 group-hover:scale-105"
+/>
+
+                  </div>
+                ) : media?.type === 'image' ? (
+                  <img
+                    src={media.url}
+                    alt={`Property image ${property.id}`}
+                    className="w-full aspect-video object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full aspect-video bg-gray-300 flex items-center justify-center text-sm text-gray-700">
+                    No Media Available
+                  </div>
+                )}
+
+                {/* Unified Gradient Footer with Go Live */}
+                <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white px-4 py-3 text-sm z-10 flex justify-between items-center">
+                  <div>
+                    <p className="font-semibold truncate">{property.city}</p>
+                    <p className="text-xs">
+                      ₦{property.price.toLocaleString()}k · {property.bedrooms} bed / {property.bathrooms} bath
+                    </p>
+                  </div>
+
+                  <span
+                    className="flex items-center gap-1 text-xs text-white hover:underline cursor-pointer hover:text-white transition-all duration-200 active:scale-95"
+                    onClick={() =>
+                      handleOpenGoLive({
+                        id: property.id,
+                        title: `${property.description} in ${property.city}`,
+                      })
+                    }
+                  >
+                    <Globe size={14} />
                     Go Live
                   </span>
-
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50" onClick={closeModal}>
-          <div className="relative">
-            <video src={currentVideo} className="w-full h-auto sm:w-96 md:w-[80%] lg:w-[60%]" autoPlay controls>
-              Your browser does not support the video tag.
-            </video>
-            <button className="absolute top-2 right-2 text-white text-xl" onClick={closeModal}>
+      {isModalOpen && currentPlaybackId && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50"
+          onClick={closeModal}
+        >
+          <div
+            className="relative w-full max-w-4xl mx-auto p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MuxPlayer
+              playbackId={currentPlaybackId}
+              autoPlay={false}
+              // @ts-ignore
+              controls
+              style={{ width: '100%', height: 'auto' }}
+            />
+            <button
+              className="absolute top-2 right-2 text-white text-xl"
+              onClick={closeModal}
+            >
               ✕
             </button>
           </div>
         </div>
       )}
-      {showGoLiveModal && selectedPropertyId && (
-  <GoLiveForm
-    propertyId={selectedPropertyId.toString()}
-    onClose={handleCloseGoLive}
-  />
-)}
 
+      {showGoLiveModal && selectedPropertyId && (
+        <GoLiveForm
+          propertyId={selectedPropertyId.toString()}
+          onClose={handleCloseGoLive}
+        />
+      )}
     </div>
   );
 };
