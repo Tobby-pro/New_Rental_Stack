@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import AgoraRTC, { IAgoraRTCClient, ICameraVideoTrack } from 'agora-rtc-sdk-ng';
+import AgoraRTC, { IAgoraRTCClient } from 'agora-rtc-sdk-ng';
 import "@/styles/globals.css";
+
 const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
 console.log("Agora App ID:", appId);
@@ -19,12 +20,12 @@ const AudiencePage = () => {
   const searchParams = useSearchParams();
 
   const channelName = searchParams?.get('channel') || '';
-  const token = searchParams?.get('token') || ''; // This should be the Agora token passed from the backend
+  const token = searchParams?.get('token') || '';
   const uidParam = searchParams?.get('uid');
-  const uid = uidParam ? Number(uidParam) : null; // This should be the user ID from your application context
+  const uid = uidParam ? Number(uidParam) : null;
 
   const [client] = useState<IAgoraRTCClient>(() => AgoraRTC.createClient(config));
-  const [users, setUsers] = useState<any[]>([]); // To store the users (the host and other audience members)
+  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
     const init = async () => {
@@ -42,6 +43,7 @@ const AudiencePage = () => {
               user.videoTrack?.play(container);
             }
           }
+
           if (mediaType === 'audio') {
             user.audioTrack?.play();
           }
@@ -51,6 +53,7 @@ const AudiencePage = () => {
           if (mediaType === 'video') {
             setUsers((prev) => prev.filter((u) => u.uid !== user.uid));
           }
+
           if (mediaType === 'audio') {
             user.audioTrack?.stop();
           }
@@ -61,7 +64,6 @@ const AudiencePage = () => {
         await client.join(appId, channelName, token, uid); 
         console.log('🎉 Successfully joined the channel');
 
-        // 👇 This line is crucial for making the user a viewer (audience)
         await client.setClientRole('audience');
         console.log('🙌 Set client role to audience');
 
@@ -74,7 +76,6 @@ const AudiencePage = () => {
       init();
     }
 
-    // Cleanup function when the component unmounts
     return () => {
       console.log('🔚 Cleaning up...');
       client.leave();
