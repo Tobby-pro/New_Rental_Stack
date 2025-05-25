@@ -1,5 +1,6 @@
+'use client';
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { FaSearch } from 'react-icons/fa';
 import CustomLoading from "./Loading";
