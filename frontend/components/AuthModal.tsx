@@ -1,4 +1,3 @@
-// components/AuthModal.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
