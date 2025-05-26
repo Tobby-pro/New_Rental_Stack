@@ -1,12 +1,10 @@
-'use client'; // required since you're using client hooks inside layout
-
+// app/layout.tsx
 import { Inter } from 'next/font/google';
 import ThemeWrapper from './ThemeWrapper';
 import { UserProvider } from '@/context/UserContext';
 import Header from '@/components/Header';
-import AuthModal from '@/components/AuthModal';
+import AuthModalWrapper from '@/components/AuthModalWrapper'; // 👈 use wrapper
 import '@/styles/globals.css';
-import { Suspense } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -32,9 +30,7 @@ export default function RootLayout({
             disableTransitionOnChange={true}
           >
             <Header />
-            <Suspense fallback={null}>
-              <AuthModal />
-            </Suspense>
+            <AuthModalWrapper /> {/* 👈 moved Suspense+Modal into a client wrapper */}
             {children}
           </ThemeWrapper>
         </UserProvider>
