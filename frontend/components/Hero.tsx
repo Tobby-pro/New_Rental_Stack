@@ -112,7 +112,7 @@ const Hero = () => {
         <div className="flex-1 text-center lg:text-left">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-500">Go Live with Property Tours</h2>
           <p className="text-base md:text-lg mb-4">
-            Landlords can now host live video tours of their properties, showcasing details in real time. No need to pre-record or upload videos — just go live!
+            Landlords can now host live video tours of their properties, showcasing details in real time. No more waiting — just go live!
           </p>
           <h3 className="text-xl font-semibold mb-2">Tenants Can:</h3>
           <ul className="text-sm md:text-lg list-disc list-inside text-left mb-4">
