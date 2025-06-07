@@ -3,6 +3,7 @@ import DashboardLayout from '../../components/Dashboard/DashboardLayout';
 import { UserProvider } from '@/context/UserContext';
 import LandlordDashboardGrid from '@/components/LandlordDashboardgrid';
 import MyPropertyList from '@/components/MyPropertyList';
+import PublicServiceList from '@/components/PublicServiceList';
 
 const LandlordDashboardContent = ({ setModalOpen }: { setModalOpen?: (value: boolean) => void }) => {
   useEffect(() => {
@@ -22,6 +23,7 @@ const LandlordDashboardContent = ({ setModalOpen }: { setModalOpen?: (value: boo
 
       <LandlordDashboardGrid className="text-white" setModalOpen={setModalOpen ?? (() => {})} />
       <MyPropertyList className="text-white" />
+      <PublicServiceList />
     </div>
   );
 };

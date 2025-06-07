@@ -1,3 +1,4 @@
+// DashboardLayout.tsx
 import React, { ReactElement, useState, cloneElement, isValidElement } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
@@ -7,9 +8,10 @@ import ChatPanel from './ChatPanel';
 import '@/styles/globals.css';
 import { useUser } from '@/context/UserContext';
 import axios, { AxiosError } from 'axios';
+import { Toaster } from 'react-hot-toast';
 
 interface DashboardLayoutProps {
-  children: ReactElement; // No prop typing here, keep flexible
+  children: ReactElement;
 }
 
 interface ErrorResponse {
@@ -74,22 +76,33 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     }
   };
 
-  // IMPORTANT: Type assertion here to silence TypeScript error
   const enhancedChildren = isValidElement(children)
     ? cloneElement(children as ReactElement<any>, { setModalOpen: setModalOpenState })
     : children;
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black text-white">
+    <div className="flex min-h-screen bg-black-100 text-white">
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 bg-black bg-opacity-70 backdrop-blur-sm md:hidden">
-          <Sidebar isMobile={true} onClose={toggleSidebar} onLinkClick={handleLinkClick} setModalOpen={setModalOpenState} onChatToggle={onChatToggle} />
+          <Sidebar
+            isMobile={true}
+            onClose={toggleSidebar}
+            onLinkClick={handleLinkClick}
+            setModalOpen={setModalOpenState}
+            onChatToggle={onChatToggle}
+          />
         </div>
       )}
 
       <div className="flex flex-1 flex-col md:flex-row w-full">
         <aside className="hidden md:block md:w-64 border-r border-gray-800 bg-gray-950">
-          <Sidebar onClose={() => setSidebarOpen(false)} isMobile={false} onLinkClick={handleLinkClick} setModalOpen={setModalOpenState} onChatToggle={onChatToggle} />
+          <Sidebar
+            onClose={() => setSidebarOpen(false)}
+            isMobile={false}
+            onLinkClick={handleLinkClick}
+            setModalOpen={setModalOpenState}
+            onChatToggle={onChatToggle}
+          />
         </aside>
 
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
@@ -103,7 +116,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             landlordId={landlordId}
             conversationId={conversationId || ''}
             socket={undefined}
-            onChatToggle={() => setChatOpen(prev => !prev)}
+            onChatToggle={onChatToggle}
             onLinkClick={handleLinkClick}
             setModalOpen={setModalOpenState}
           />
@@ -120,6 +133,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 setAlertMessage={setAlertMessage}
                 onSubmit={handleAddPropertySubmit}
               />
+
+              {/* 🔥 Toasts available only here in dashboard */}
+              <Toaster position="top-right" reverseOrder={false} />
             </main>
           </div>
         </div>

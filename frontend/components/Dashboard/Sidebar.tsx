@@ -135,11 +135,11 @@ const Sidebar = ({ visible = true, onClose, onLinkClick, setModalOpen, onChatTog
     <>
       <div className={`flex items-center justify-center py-6 ${!isMobile ? 'border-b border-gray-600' : ''}`}>
         <Image
-          src="/images/dirent_transparent.svg"
+          src="/images/jun7_03.png"
           alt="Logo"
-          width={100}
-          height={100}
-          className="w-[100px] h-auto"
+          width={60}
+          height={60}
+          className="w-[60px] h-auto"
           priority
         />
       </div>

@@ -4,6 +4,7 @@
       "dom",
       "dom.iterable",
       "esnext"
+      
     ],
     "allowJs": true,
     "target": "es2020",

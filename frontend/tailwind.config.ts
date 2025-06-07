@@ -1,22 +1,23 @@
 import type { Config } from "tailwindcss";
+import svgToDataUri from "mini-svg-data-uri";
+import colors from "tailwindcss/colors";
 
-const svgToDataUri = require("mini-svg-data-uri");
-
-const colors = require("tailwindcss/colors");
-const {
-  default: flattenColorPalette,
-} = require("tailwindcss/lib/util/flattenColorPalette");
-
-const config = {
+const config: Config = {
   darkMode: ["class"],
-  content: [ 
-        "./app/**/*.{js,ts,jsx,tsx}", 
-        "./pages/**/*.{js,ts,jsx,tsx}", 
-        "./components/**/*.{js,ts,jsx,tsx}", 
-          
-        // Or if using `src` directory: 
-        "./src/**/*.{js,ts,jsx,tsx}", 
-      ], 
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  safelist: [
+    "bg-green-100", "dark:bg-green-900", "text-green-500",
+    "bg-blue-100", "dark:bg-blue-900", "text-blue-500",
+    "bg-yellow-100", "dark:bg-yellow-900", "text-yellow-500",
+    "bg-purple-100", "dark:bg-purple-900", "text-purple-500",
+    "bg-teal-100", "dark:bg-teal-900", "text-teal-500",
+    "bg-pink-100", "dark:bg-pink-900", "text-pink-500",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -27,7 +28,6 @@ const config = {
       },
     },
     extend: {
-      
       colors: {
         black: {
           DEFAULT: "#000",
@@ -85,10 +85,10 @@ const config = {
       },
       keyframes: {
         slide: {
-          '0%': { transform: 'translateX(0)', opacity: '0.3' },
-          '50%': { transform: 'translateX(6px)', opacity: '1' },
-          '100%': { transform: 'translateX(12px)', opacity: '0.3' },
-  },
+          "0%": { transform: "translateX(0)", opacity: "0.3" },
+          "50%": { transform: "translateX(6px)", opacity: "1" },
+          "100%": { transform: "translateX(12px)", opacity: "0.3" },
+        },
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -98,65 +98,36 @@ const config = {
           to: { height: "0" },
         },
         spotlight: {
-          "0%": {
-            opacity: "0",
-            transform: "translate(-72%, -62%) scale(0.5)",
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translate(-50%,-40%) scale(1)",
-          },
+          "0%": { opacity: "0", transform: "translate(-72%, -62%) scale(0.5)" },
+          "100%": { opacity: "1", transform: "translate(-50%,-40%) scale(1)" },
         },
         shimmer: {
-          from: {
-            backgroundPosition: "0 0",
-          },
-          to: {
-            backgroundPosition: "-200% 0",
-          },
+          from: { backgroundPosition: "0 0" },
+          to: { backgroundPosition: "-200% 0" },
         },
         moveHorizontal: {
-          "0%": {
-            transform: "translateX(-50%) translateY(-10%)",
-          },
-          "50%": {
-            transform: "translateX(50%) translateY(10%)",
-          },
-          "100%": {
-            transform: "translateX(-50%) translateY(-10%)",
-          },
+          "0%": { transform: "translateX(-50%) translateY(-10%)" },
+          "50%": { transform: "translateX(50%) translateY(10%)" },
+          "100%": { transform: "translateX(-50%) translateY(-10%)" },
         },
         moveInCircle: {
-          "0%": {
-            transform: "rotate(0deg)",
-          },
-          "50%": {
-            transform: "rotate(180deg)",
-          },
-          "100%": {
-            transform: "rotate(360deg)",
-          },
+          "0%": { transform: "rotate(0deg)" },
+          "50%": { transform: "rotate(180deg)" },
+          "100%": { transform: "rotate(360deg)" },
         },
         moveVertical: {
-          "0%": {
-            transform: "translateY(-50%)",
-          },
-          "50%": {
-            transform: "translateY(50%)",
-          },
-          "100%": {
-            transform: "translateY(-50%)",
-          },
+          "0%": { transform: "translateY(-50%)" },
+          "50%": { transform: "translateY(50%)" },
+          "100%": { transform: "translateY(-50%)" },
         },
         scroll: {
           to: {
             transform: "translate(calc(-50% - 0.5rem))",
           },
         },
-
       },
       animation: {
-        'slide-dot': 'slide 1s infinite ease-in-out',
+        "slide-dot": "slide 1s infinite ease-in-out",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         spotlight: "spotlight 2s ease .75s 1 forwards",
@@ -166,48 +137,47 @@ const config = {
         third: "moveInCircle 40s linear infinite",
         fourth: "moveHorizontal 40s ease infinite",
         fifth: "moveInCircle 20s ease infinite",
-        scroll:
-          "scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite",
+        scroll: "scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite",
       },
     },
   },
   plugins: [
     require("tailwindcss-animate"),
-    addVariablesForColors,
-    function ({ matchUtilities, theme }: any) {
+    function ({
+      matchUtilities,
+      theme,
+    }: {
+      matchUtilities: (
+        utils: Record<string, (value: string) => Record<string, string>>,
+        options: { values: any; type: string }
+      ) => void;
+      theme: (key: string) => any;
+    }) {
       matchUtilities(
         {
-          "bg-grid": (value: any) => ({
+          "bg-grid": (value) => ({
             backgroundImage: `url("${svgToDataUri(
               `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="100" height="100" fill="none" stroke="${value}"><path d="M0 .5H31.5V32"/></svg>`
             )}")`,
           }),
-          "bg-grid-small": (value: any) => ({
+          "bg-grid-small": (value) => ({
             backgroundImage: `url("${svgToDataUri(
               `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="8" height="8" fill="none" stroke="${value}"><path d="M0 .5H31.5V32"/></svg>`
             )}")`,
           }),
-          "bg-dot": (value: any) => ({
+          "bg-dot": (value) => ({
             backgroundImage: `url("${svgToDataUri(
-              `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="16" height="16" fill="none"><circle fill="${value}" id="pattern-circle" cx="10" cy="10" r="1.6257413380501518"></circle></svg>`
+              `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="16" height="16" fill="none"><circle fill="${value}" cx="10" cy="10" r="1.6"/></svg>`
             )}")`,
           }),
         },
-        { values: flattenColorPalette(theme("backgroundColor")), type: "color" }
+        {
+          values: theme("colors"),
+          type: "color",
+        }
       );
     },
   ],
-} satisfies Config;
-
-function addVariablesForColors({ addBase, theme }: any) {
-  let allColors = flattenColorPalette(theme("colors"));
-  let newVars = Object.fromEntries(
-    Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
-  );
-
-  addBase({
-    ":root": newVars,
-  });
-}
+};
 
 export default config;

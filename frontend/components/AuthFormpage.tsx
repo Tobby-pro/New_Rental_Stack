@@ -6,7 +6,7 @@ import TypeWriter from './TypeWriter';
 import { useUser } from '@/context/UserContext';
 import { io } from 'socket.io-client';
 import CustomLoading from './Loading';
-import { motion } from 'framer-motion'; // Import Framer Motion
+import { motion } from 'framer-motion';
 
 interface AuthFormProps {
   mode: 'login' | 'signup';
@@ -32,6 +32,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
   const [isSignUp, setIsSignUp] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [emailLink, setEmailLink] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const router = useRouter();
@@ -45,6 +46,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
 
   const validateEmail = (email: string): boolean => /\S+@\S+\.\S+/.test(email);
   const validatePassword = (password: string): boolean => /^(?=.*[A-Z])(?=.*\d).{8,}$/.test(password);
+
+  const getEmailProviderLink = (email: string): string | null => {
+    const domain = email.split('@')[1]?.toLowerCase();
+    if (domain.includes('gmail')) return 'https://mail.google.com/';
+    if (domain.includes('yahoo')) return 'https://mail.yahoo.com/';
+    if (domain.includes('outlook') || domain.includes('hotmail')) return 'https://outlook.live.com/';
+    return null;
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -67,6 +76,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
+    setEmailLink(null);
 
     const payload = {
       email: user.email,
@@ -82,13 +92,17 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
       });
 
       if (isSignUp) {
-        setSuccessMessage('A verification email has been sent. Please check your inbox and verify your email before proceeding.');
+        const link = getEmailProviderLink(user.email);
+        setSuccessMessage('Signup successful. Please verify your email.');
+        if (link) setEmailLink(link);
         setIsSubmitting(false);
         return;
       }
 
       if (response.data.user.isVerified === false) {
-        setError('Please verify your email before logging in. Check your inbox for the verification email.');
+        const link = getEmailProviderLink(response.data.user.email);
+        setError('Please verify your email before logging in.');
+        if (link) setEmailLink(link);
         setIsSubmitting(false);
         return;
       }
@@ -98,12 +112,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
       const userRole = response.data.user.role;
       const tenantId = response.data.user.tenantId || null;
       const landlordId = response.data.user.landlordId || null;
+      const serviceProviderId = response.data.user.serviceProviderId || null;
 
       localStorage.setItem('token', token);
       localStorage.setItem('userId', userId);
       localStorage.setItem('userRole', userRole);
       if (tenantId) localStorage.setItem('tenantId', tenantId);
       if (landlordId) localStorage.setItem('landlordId', landlordId);
+      if (serviceProviderId) localStorage.setItem('serviceProviderId', serviceProviderId);
 
       setUsername(response.data.user.name);
 
@@ -112,9 +128,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
         role: userRole,
         tenantId: userRole === 'TENANT' ? tenantId : null,
         landlordId: userRole === 'LANDLORD' ? landlordId : null,
+        serviceProviderId: userRole === 'SERVICE_PROVIDER' ? serviceProviderId : null,
       });
 
-      const redirectPath = userRole === 'LANDLORD' ? '/dashboard/LandlordDashboard' : '/dashboard/TenantDashboard';
+      let redirectPath = '/dashboard';
+      if (userRole === 'LANDLORD') redirectPath = '/dashboard/LandlordDashboard';
+      else if (userRole === 'TENANT') redirectPath = '/dashboard/TenantDashboard';
+      else if (userRole === 'SERVICE_PROVIDER') redirectPath = '/dashboard/ServiceProviderDashboard';
+
       router.push(redirectPath);
     } catch (err) {
       const axiosError = err as AxiosError;
@@ -123,7 +144,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
         const errorData = axiosError.response.data as ErrorResponse;
 
         if (axiosError.response.status === 403) {
-          setError('Please verify your email before logging in. Check your inbox for the verification email.');
+          setError('Please verify your email before logging in.');
         } else {
           setError(errorData.message || 'An error occurred. Please try again.');
         }
@@ -154,11 +175,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
       )}
 
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4 text-gray-300">
+        <h1 className="text-2xl font-bold mb-4 text-gray-500">
           {isSignUp ? 'Sign Up' : 'Login'}
         </h1>
         <form
-          className="bg-transparent border border-gray-500 p-6 rounded shadow-md w-full max-w-sm"
+          className="bg-transparent border border-gray-500 p-6 rounded-xl shadow-md w-full max-w-sm"
           onSubmit={handleSubmit}
         >
           <label htmlFor="email" className="block text-sm text-gray-700">Email</label>
@@ -168,7 +189,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
             placeholder="tobichuks@gmail.com"
             value={user.email}
             onChange={(e) => setUser({ ...user, email: e.target.value })}
-            className="bg-transparent outline-none w-full px-4 py-2 border  placeholder:text-sm rounded placeholder:text-gray-600 border-gray-600"
+            className="bg-transparent outline-none w-full px-4 py-2 border  placeholder:text-sm rounded placeholder:text-gray-600 border-gray-600 text-gray-300"
           />
 
           <label htmlFor="password" className="block text-sm text-gray-700">Password</label>
@@ -178,7 +199,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
             placeholder="password"
             value={user.password}
             onChange={(e) => setUser({ ...user, password: e.target.value })}
-            className=" border-gray-600 bg-transparent outline-none  placeholder:text-sm w-full px-4 py-2 border rounded placeholder:text-gray-600"
+            className="text-gray-300 border-gray-600 bg-transparent outline-none  placeholder:text-sm w-full px-4 py-2 border rounded placeholder:text-gray-600"
           />
 
           {isSignUp && (
@@ -190,7 +211,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
                 placeholder="Jesse peter"
                 value={user.name}
                 onChange={(e) => setUser({ ...user, name: e.target.value })}
-                className=" border-gray-600  placeholder:text-sm bg-transparent outline-none w-full px-4 py-2 border rounded placeholder:text-gray-600"
+                className="text-gray-300 border-gray-600  placeholder:text-sm bg-transparent outline-none w-full px-4 py-2 border rounded placeholder:text-gray-600"
               />
             </>
           )}
@@ -202,10 +223,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
                 name="role"
                 value={user.role}
                 onChange={(e) => setUser({ ...user, role: e.target.value })}
-                className=" border-gray-600 text-sm placeholder:text-sm bg-transparent outline-none w-full px-4 py-2 border rounded"
+                className="text-gray-300 border-gray-600 text-sm placeholder:text-sm bg-transparent outline-none w-full px-4 py-2 border rounded"
               >
                 <option value="LANDLORD">Landlord</option>
                 <option value="TENANT">Tenant</option>
+                <option value="SERVICE_PROVIDER">Service Provider</option>
               </select>
             </>
           )}
@@ -226,8 +248,45 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
           </button>
         </p>
 
-        {error && <p className="text-red-500">{error}</p>}
-        {successMessage && <p className="text-green-600">{successMessage}</p>}
+        {error && (
+          <p className="text-red-500 mt-2">
+            {error}
+            {emailLink && (
+              <span>
+                {' '}
+                👉{' '}
+                <a
+                  href={emailLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 underline hover:text-blue-700"
+                >
+                  Open your mail
+                </a>
+              </span>
+            )}
+          </p>
+        )}
+
+        {successMessage && (
+          <p className="text-green-600 mt-2">
+            {successMessage}
+            {emailLink && (
+              <span>
+                {' '}
+                👉{' '}
+                <a
+                  href={emailLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 underline hover:text-blue-700"
+                >
+                  Open your mail
+                </a>
+              </span>
+            )}
+          </p>
+        )}
       </div>
     </motion.div>
   );

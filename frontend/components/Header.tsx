@@ -1,30 +1,30 @@
 'use client'
 import React from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'; // Import useRouter
-import Link from 'next/link';
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 const Header = () => {
-  const router = useRouter(); // Initialize router
+  const router = useRouter()
 
   return (
-    <header className="fixed top-0 w-full z-50 h-14 backdrop-blur-md bg-opacity-50">
-      <nav className="flex items-center justify-between p-4 lg:p-8">
+    <header className="fixed top-0 w-full z-50 h-16 backdrop-blur-md bg-opacity-50">
+      <nav className="flex items-center justify-between h-full px-4 lg:px-8">
         {/* Left side - Logo */}
-        <div className="flex flex-1">
-          <Link href="">
+        <div className="flex items-center flex-1">
+          <Link href="/">
             <Image
-              src="/images/dirent_transparent.svg"
+              src="/images/jun7_03.png"
               alt="bluntrent"
-              width={100}
-              height={100}
+              width={60}
+              height={60}
               priority
             />
           </Link>
         </div>
 
         {/* Right side - Sign Up and Login Buttons */}
-        <div className="space-x-4">
+        <div className="flex items-center space-x-4">
           <button
             onClick={() => router.push('/?mode=signup')}
             className="text-gray-500 hover:text-blue-500"
@@ -43,4 +43,4 @@ const Header = () => {
   )
 }
 
-export default Header;
+export default Header
