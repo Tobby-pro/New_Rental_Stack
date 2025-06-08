@@ -87,9 +87,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
 
     try {
       const endpoint = isSignUp ? `${apiUrl}/users` : `${apiUrl}/login`;
-      const response = await axios.post(endpoint, payload, {
-        withCredentials: true,
-      });
+      const response = await axios.post(endpoint, payload, { withCredentials: true });
 
       if (isSignUp) {
         const link = getEmailProviderLink(user.email);
@@ -139,10 +137,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
       router.push(redirectPath);
     } catch (err) {
       const axiosError = err as AxiosError;
-
       if (axiosError.response) {
         const errorData = axiosError.response.data as ErrorResponse;
-
         if (axiosError.response.status === 403) {
           setError('Please verify your email before logging in.');
         } else {
@@ -151,37 +147,43 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
       } else {
         setError('An error occurred. Please try again.');
       }
-
       console.error('Submission error:', axiosError);
       setIsSubmitting(false);
     }
   };
 
-  if (isSubmitting) {
-    return <CustomLoading />;
-  }
+  if (isSubmitting) return <CustomLoading />;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7 }}
-      className={`w-full flex ${isModal ? 'flex-col' : 'flex-col lg:flex-row'} items-center justify-center min-h-screen dark:bg-black-100`}
+      className={`relative w-full flex ${isModal ? 'flex-col' : 'flex-col lg:flex-row'} items-center justify-center min-h-screen dark:bg-black-100`}
     >
       {!isModal && (
-        <div className="w-full lg:w-1/2 hidden lg:block">
-          <TypeWriter />
-        </div>
+        <>
+          {/* Background Image */}
+          <div className="absolute top-0 left-0 w-full h-64 lg:h-full lg:w-1/2 z-0">
+            <img
+              src="images/nito01.png"
+              alt="Background"
+              className="object-cover w-full h-full opacity-40"
+            />
+          </div>
+
+          {/* Typewriter Text in Front */}
+          <div className="relative w-full lg:w-1/2 z-10 flex items-center justify-center py-10">
+            <TypeWriter />
+          </div>
+        </>
       )}
 
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center">
+      <div className="relative z-10 w-full lg:w-1/2 flex flex-col items-center justify-center px-4">
         <h1 className="text-2xl font-bold mb-4 text-gray-500">
           {isSignUp ? 'Sign Up' : 'Login'}
         </h1>
-        <form
-          className="bg-transparent border border-gray-500 p-6 rounded-xl shadow-md w-full max-w-sm"
-          onSubmit={handleSubmit}
-        >
+        <form onSubmit={handleSubmit} className="bg-transparent border border-gray-500 p-6 rounded-xl shadow-md w-full max-w-sm">
           <label htmlFor="email" className="block text-sm text-gray-700">Email</label>
           <input
             name="email"
@@ -189,7 +191,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
             placeholder="tobichuks@gmail.com"
             value={user.email}
             onChange={(e) => setUser({ ...user, email: e.target.value })}
-            className="bg-transparent outline-none w-full px-4 py-2 border  placeholder:text-sm rounded placeholder:text-gray-600 border-gray-600 text-gray-300"
+            className="bg-transparent outline-none w-full px-4 py-2 border placeholder:text-sm rounded placeholder:text-gray-600 border-gray-600 text-gray-300"
           />
 
           <label htmlFor="password" className="block text-sm text-gray-700">Password</label>
@@ -199,7 +201,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
             placeholder="password"
             value={user.password}
             onChange={(e) => setUser({ ...user, password: e.target.value })}
-            className="text-gray-300 border-gray-600 bg-transparent outline-none  placeholder:text-sm w-full px-4 py-2 border rounded placeholder:text-gray-600"
+            className="text-gray-300 border-gray-600 bg-transparent outline-none placeholder:text-sm w-full px-4 py-2 border rounded placeholder:text-gray-600"
           />
 
           {isSignUp && (
@@ -211,13 +213,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
                 placeholder="Jesse peter"
                 value={user.name}
                 onChange={(e) => setUser({ ...user, name: e.target.value })}
-                className="text-gray-300 border-gray-600  placeholder:text-sm bg-transparent outline-none w-full px-4 py-2 border rounded placeholder:text-gray-600"
+                className="text-gray-300 border-gray-600 placeholder:text-sm bg-transparent outline-none w-full px-4 py-2 border rounded placeholder:text-gray-600"
               />
-            </>
-          )}
 
-          {isSignUp && (
-            <>
               <label htmlFor="role" className="block text-sm text-gray-700">Role</label>
               <select
                 name="role"
@@ -234,16 +232,19 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
 
           <button
             type="submit"
-            className="mt-6 w-full bg-gradient-to-r  from-violet-700 via-black-100 to-violet-700 text-white font-bold py-2 px-4 rounded text-center"
+            className="mt-6 w-full bg-gradient-to-r from-violet-700 via-black-100 to-violet-700 text-white font-bold py-2 px-4 rounded text-center"
             disabled={isSubmitting}
           >
             {isSignUp ? 'Sign Up' : 'Login'}
           </button>
         </form>
 
-        <p className="mt-4 text-blue-500 ">
+        <p className="mt-4 text-blue-500">
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-          <button className="p-[6px] rounded-sm bg-gradient-to-r from-violet-500 via-black-100 to-violet-950 text-white w-16" onClick={() => setIsSignUp(!isSignUp)}>
+          <button
+            className="p-[6px] ml-2 rounded-sm bg-gradient-to-r from-violet-500 via-black-100 to-violet-950 text-white w-16"
+            onClick={() => setIsSignUp(!isSignUp)}
+          >
             {isSignUp ? 'Login' : 'SignUp'}
           </button>
         </p>
@@ -253,14 +254,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
             {error}
             {emailLink && (
               <span>
-                {' '}
-                👉{' '}
-                <a
-                  href={emailLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 underline hover:text-blue-700"
-                >
+                {' '}👉{' '}
+                <a href={emailLink} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline hover:text-blue-700">
                   Open your mail
                 </a>
               </span>
@@ -269,23 +264,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ mode, isModal = false }) => {
         )}
 
         {successMessage && (
-          <p className="text-green-600 mt-2">
-            {successMessage}
-            {emailLink && (
-              <span>
-                {' '}
-                👉{' '}
-                <a
-                  href={emailLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 underline hover:text-blue-700"
-                >
-                  Open your mail
-                </a>
-              </span>
-            )}
-          </p>
+          <p className="text-green-600 mt-2">{successMessage}</p>
         )}
       </div>
     </motion.div>

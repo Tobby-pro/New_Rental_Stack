@@ -13,6 +13,17 @@ const Hero = () => {
   return (
     <div className="relative mt-10 min-h-screen w-screen dark:bg-black-100 bg-white dark:bg-grid-white/[0.05] bg-grid-black/[0.2]">
       
+      {/* FULLSCREEN Background Image */}
+      <div className="absolute inset-0 w-full h-screen z-0">
+        <Image
+          src="/images/nito01.png"
+          alt="Background image"
+          fill
+          className="object-cover opacity-40"
+          priority
+        />
+      </div>
+
       {/* Background styling */}
       <div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black-100 bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
       
@@ -25,28 +36,25 @@ const Hero = () => {
       </div>
 
       {/* Hero section */}
-      <div className="flex justify-center items-center relative top-0 left-0 min-h-[80vh]">
-        <div className="flex justify-center relative mt-0 z-10">
+      <div className="flex justify-center items-center relative top-0 left-0 min-h-[80vh] z-10">
+        <div className="flex justify-center relative mt-0">
           <div className="max-w-[100vw] md:max-w-4xl justify-center flex flex-col items-center">
-            
+
+            {/* Foreground text */}
+            <div className="relative w-full px-4 sm:px-8 text-center py-10">
+              <TextGenerateEffect
+                className="font-bold text-center text-gray-700 text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
+                words="Home Connections Made Simple, Connecting Renters and Providers"
+              />
+              <TextGenerateEffect
+                className="text-center text-gray-500 md:tracking-wider mb-4 mt-2 text-sm md:text-lg"
+                words="Explore homes with ease, Discover Homes in Your Preferred Area."
+              />
+            </div>
+
+            {/* Get Started Button */}
             <motion.div 
-              className="w-44 lg:w-56"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 2 }}
-            />
-            
-            <TextGenerateEffect
-              className="font-bold text-center text-gray-500 text-3xl sm:text-4xl md:text-5xl lg:text-6xl"
-              words="Home Connections Made Simple, Connecting Renters and Providers"
-            />
-            <TextGenerateEffect
-              className="text-center md:tracking-wider mb-4 text-sm"
-              words="Explore homes with ease, Discover Homes in Your Preferred Area."
-            />
-            
-            <motion.div 
-              className="w-44 lg:w-56"
+              className="w-44 lg:w-56 mt-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 7 }}
@@ -99,7 +107,7 @@ const Hero = () => {
         {/* Live Image */}
         <div className="flex-1 flex justify-center mb-10 lg:mb-0">
           <Image
-            src="/images/chatpanel01.png"  // Change to your actual image
+            src="/images/chatpanel01.png"
             alt="Live property tour"
             width={700}
             height={800}

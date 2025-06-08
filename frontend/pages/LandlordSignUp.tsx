@@ -10,7 +10,7 @@ const LandLordSignUp = () => {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
       <UserProvider> {/* Wrap the AuthForm with UserProvider */}
-        <div className="w-full bg-black-100 relative flex justify-center items-center min-h-screen flex-col sm:px-10 px-4 py-8 pt-10 overflow-clip">
+        <div className="w-full bg-black-100 relative flex justify-center items-center min-h-screen flex-col  overflow-clip">
           <AuthForm mode={'login'} />
           
         </div>
